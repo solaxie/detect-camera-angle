@@ -5,6 +5,7 @@ from datetime import date, timedelta
 from lightglue import LightGlue, SuperPoint
 from lightglue.utils import load_image, rbd
 from lightglue import viz2d
+import send_email
 
 def setup_device():
     """
@@ -196,6 +197,7 @@ def main():
         viz2d.plot_keypoints([kpts0, kpts1], colors=[kpc0, kpc1], ps=10)
         # 儲存兩張圖特徵點的圖片
         viz2d.save_plot(video_record_path / f'comparison_featurepoint_{file_name}')
+    send_email()
 
 if __name__ == "__main__":
     main()
