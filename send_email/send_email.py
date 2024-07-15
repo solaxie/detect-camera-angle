@@ -7,7 +7,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.application import MIMEApplication
 from datetime import date
 
-def send_email(sender=None, receivers=None, subject=None, body=None, attachment=None):
+def send_email(sender=None, receivers=None, subject=None, body=None, attachment=None, file_name=None):
     # 設置默認值
     sender = sender or "omo@eslite.com"
     receivers = receivers or ["solaxie@eslite.com", "hectormao@eslite.com"]
@@ -29,11 +29,15 @@ def send_email(sender=None, receivers=None, subject=None, body=None, attachment=
     msg['Subject'] = subject
     msg.attach(MIMEText(body, 'plain'))
 
-    # 檢查attachment路徑內的全部.jpg並加到附件
-    if attachment and os.path.exists(attachment):  # 檢查attachment路徑是否存在
-        jpg_files = [f for f in os.listdir(attachment) if f.endswith('.jpg')]  # 獲取.jpg檔名
-        if not jpg_files:  # 檢查是否有.jpg檔
-            logging.warning(f"附件目錄 {attachment} 中沒有找到 .jpg 文件")  # 輸出警告訊息
+    # 檢查attachment路徑內的全部符合條件的.jpg並加到附件
+    if attachment and os.path.exists(attachment):
+        if file_name: # 當提供 file_name 時，程序會搜尋同時包含 file_name 和 ".jpg" 的文件。
+            jpg_files = [f for f in os.listdir(attachment) if f.endswith('.jpg') and file_name in f]
+        else: # 如果 file_name 為空（即 None），程序會搜尋所有 ".jpg" 文件，保持原有功能。
+            jpg_files = [f for f in os.listdir(attachment) if f.endswith('.jpg')]
+        
+        if not jpg_files:
+            logging.warning(f"附件目錄 {attachment} 中沒有找到符合條件的 .jpg 文件")
         
         for filename in jpg_files:  # 逐一加到附件
             with open(os.path.join(attachment, filename), 'rb') as f:  # 開啟檔案
@@ -70,6 +74,7 @@ receivers (list of str, optional): 郵件收件人的電子郵件地址列表。
 subject (str, optional): 郵件主旨。預設為空字符串。
 body (str, optional): 郵件內文。預設為空字符串。
 attachment (str, optional): 附件的目錄路徑。如果提供，函數將附加該目錄中的所有 .jpg 文件。預設為空字符串。
+file_name (str, optional): 欲上傳附件的檔案名稱，可以只提供部分字元，不需要提供完整檔名。預設為空字串。不提供file_name但有提供attachment則會上傳全部.jpg檔案。
 
 Returns:
 bool: 如果郵件成功發送返回 True，否則返回 False。
@@ -85,7 +90,8 @@ success = send_email(
     receivers = ["solaxie@eslite.com", "hectormao@eslite.com"],   # 郵件收件人，此為預設值，若不傳入參數則使用預設值。可以添加多個收件人
     subject = f"告警：發現監視器{camera_number}畫面於今日有變化。",  # 郵件主旨，若不傳入參數，則留空白不使用任何值
     body = f"請調查監視器{camera_number}的畫面。",                 # 郵件內文，若不傳入參數，則留空白不使用任何值
-    attachment = "/compare-result"                             # 附件的目錄路徑，若不傳入參數，則留空白不使用任何值
+    attachment = "/compare-result",                             # 附件的目錄路徑，若不傳入參數，則留空白不使用任何值
+    file_name = "178-11"                                        # 要上傳的檔案名稱的關鍵字，則留空白不使用任何值
     )
 if success:
     print("郵件發送成功")
