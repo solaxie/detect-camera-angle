@@ -1,0 +1,14 @@
+# 畫面像素的位移閥值百分比
+threshold_percentage=0.05
+# send_email函數的參數: 寄信人，若不傳入參數，會套用預設omo@eslite.com
+sender=
+# send_email函數的參數: 收件人，若不傳入參數，會套用預設solaxie@eslite.com / hectormao@eslite.com
+receivers=
+# send_email函數的參數: 主旨，若不傳入參數，則留空白不使用任何值
+subject=
+# send_email函數的參數: 內文，若不傳入參數，則留空白不使用任何值
+body=
+# send_email函數的參數: 附件的目錄路徑，若不傳入參數，則留空白不使用任何值
+attachment=
+# send_email函數的參數: 附件檔名，若不傳入參數，則留空白不使用任何值
+file_name=
