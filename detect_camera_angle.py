@@ -1,13 +1,12 @@
 import cv2
 import torch
+import logging
 from pathlib import Path
 from datetime import date, timedelta
 from lightglue import LightGlue, SuperPoint
 from lightglue.utils import load_image, rbd
 from lightglue import viz2d
 from send_email import send_email
-import logging
-from datetime import date
 
 # 關閉 pytorch gradient calculation 功能
 torch.set_grad_enabled(False)
@@ -138,8 +137,8 @@ def main():
     主函數,執行整個程式
     """
     # 設置路徑
-    assets = Path("assets")
-    video_record_path = Path("/run/user/1000/gvfs/smb-share:server=192.168.104.252,share=omo/CMS_data/record")
+    assets = Path("/app")
+    video_record_path = Path("/app")
 
     # 獲取今日和昨日的日期路徑
     today_dir, yesterday_dir = get_date_paths(video_record_path)
