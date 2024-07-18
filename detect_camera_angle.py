@@ -5,7 +5,19 @@ from datetime import date, timedelta
 from lightglue import LightGlue, SuperPoint
 from lightglue.utils import load_image, rbd
 from lightglue import viz2d
-import send_email
+from send_email import send_email
+import logging
+from datetime import date
+
+# 關閉 pytorch gradient calculation 功能
+torch.set_grad_enabled(False)
+
+def setup_logging():
+    today = date.today().strftime("%Y%m%d")
+    logging.basicConfig(filename=f'./log-{today}.txt',
+                        level=logging.INFO,
+                        format='%(asctime)s - %(levelname)s - %(message)s',
+                        datefmt='%Y-%m-%d %H:%M:%S')
 
 def setup_device():
     """
@@ -47,37 +59,36 @@ def process_directory(directory):
     3. 列出目錄中的所有 .jpg 檔案
     :param directory: 要處理的目錄路徑
     """
-    # 刪除目錄中的所有 .jpg 檔案
-    for jpg_file in directory.glob("*.jpg"):
-        jpg_file.unlink()
-        print(f"已刪除: {jpg_file}")
+    try:
+        for mkv_file in directory.glob("*.mkv"):
+            jpg_file = mkv_file.with_suffix('.jpg')
+            video = cv2.VideoCapture(str(mkv_file))
+            if not video.isOpened():
+                logging.error(f"錯誤：無法打開影片 {mkv_file}")
+                continue
+            ret, frame = video.read()
+            if ret:
+                cv2.imwrite(str(jpg_file), frame)
+                logging.info(f"成功：已將 {mkv_file} 的第一幀保存為 {jpg_file}")
+            else:
+                logging.error(f"錯誤：無法讀取 {mkv_file} 的第一幀")
+            video.release()
 
-    # 讀取 .mkv 檔案並保存為 .jpg
-    for mkv_file in directory.glob("*.mkv"):
-        jpg_file = mkv_file.with_suffix('.jpg')
-        video = cv2.VideoCapture(str(mkv_file))
-        if not video.isOpened():
-            print(f"錯誤：無法打開影片 {mkv_file}")
-            continue
-        ret, frame = video.read()
-        if ret:
-            cv2.imwrite(str(jpg_file), frame)
-            print(f"成功：已將 {mkv_file} 的第一幀保存為 {jpg_file}")
-        else:
-            print(f"錯誤：無法讀取 {mkv_file} 的第一幀")
-        video.release()
-
-    # 列出目錄中的所有 .jpg 檔案
-    print(f"\n目錄 {directory} 中的 .jpg 檔案：")
-    for jpg_file in directory.glob("*.jpg"):
-        relative_path = jpg_file.relative_to(video_record_path)
-        print(f"檔名: {jpg_file.name}")
-        print(f"路徑: {relative_path}")
-        print("-" * 50)
+        logging.info(f"\n目錄 {directory} 中的 .jpg 檔案：")
+        for jpg_file in directory.glob("*.jpg"):
+            relative_path = jpg_file.relative_to(video_record_path)
+            logging.info(f"檔名: {jpg_file.name}")
+            logging.info(f"路徑: {relative_path}")
+            logging.info("-" * 50)
+    except Exception as e:
+        logging.error(f"處理目錄 {directory} 時發生錯誤: {str(e)}")
 
 def read_config(file_path):
     """
     讀取並處理 config.txt 的文字
+    忽略'#'開頭的註解
+    忽略空白字元/換行字元
+    偵測'='為分割字元，左邊為key，右邊為value
     :param file_path: config.txt 的路徑
     :return: 配置字典
     """
@@ -133,17 +144,20 @@ def main():
     # 獲取今日和昨日的日期路徑
     today_dir, yesterday_dir = get_date_paths(video_record_path)
 
-    # 處理昨日和今日的目錄
-    for dir_path in [yesterday_dir, today_dir]:
-        if dir_path.exists():
-            print(f"\n處理目錄: {dir_path}")
-            process_directory(dir_path)
-        else:
-            print(f"錯誤：目錄 {dir_path} 不存在")
+    # 處理今日的目錄
+    if today_dir.exists():
+        logging.info(f"\n處理目錄: {today_dir}")
+        process_directory(today_dir)
+    else:
+        logging.error(f"錯誤：目錄 {today_dir} 不存在")
 
     # 讀取 config.txt 檔案
     config = read_config(assets / 'config.txt')
     threshold_percentage = float(config['threshold_percentage'])
+    sender = config['sender']
+    receivers = config['receivers'].split(',')
+    subject = config['subject']
+    body = config['body']
 
     # 設置PyTorch設備
     device = setup_device()
@@ -171,6 +185,7 @@ def main():
             image0, image1, threshold_percentage, extractor, matcher, device
         )
 
+        """
         # 檢測是否有移動或變形
         if vector_exceed_threshold_indices.numel() > 0:
             print(f"Alert: 今日監視器畫面{file_name} 有明顯的移動或變形! 閥值: {threshold_percentage * 100:.0f}%")
@@ -179,6 +194,16 @@ def main():
             print(vector_exceed_threshold_displacements)
         else:
             print(f"Info: {file_name} 無明顯的移動或變形. 閥值: {threshold_percentage * 100:.0f}%")
+        """
+
+        # 檢測是否有移動或變形
+        if vector_exceed_threshold_indices.numel() > 0:
+            logging.warning(f"Alert: 今日監視器畫面{file_name} 有明顯的移動或變形! 閥值: {threshold_percentage * 100:.0f}%")
+            vector_exceed_threshold_displacements = displacements[vector_exceed_threshold_indices]
+            logging.info(f"監視器畫面 {file_name} 矢量位移超過閾值 {threshold_percentage * 100:.0f}% 的 displacements 有:")
+            logging.info(f"{vector_exceed_threshold_displacements}")
+        else:
+            logging.info(f"Info: {file_name} 無明顯的移動或變形. 閥值: {threshold_percentage * 100:.0f}%")
 
         # 繪製兩張圖匹配點,如果位移沒超出閾值則為綠色,超出閾值則為紅色
         axes = viz2d.plot_images([image0, image1])
@@ -190,14 +215,18 @@ def main():
         viz2d.add_text(0, f'Stop after {matches01["stop"]} layers', fs=20)
         # 儲存兩張圖匹配點的圖片
         viz2d.save_plot(video_record_path / f'comparison_matchpoint_{file_name}')
+        # 將匹配點的圖片上傳附件並寄出email
+        if vector_exceed_threshold_indices.numel() > 0:
+            send_email(subject=f'{subject}:{file_name}', body=(body), attachment=(video_record_path), file_name=f'{file_name}')
 
+        """
         # 繪製兩張圖的特徵點
         kpc0, kpc1 = viz2d.cm_prune(matches01["prune0"]), viz2d.cm_prune(matches01["prune1"])
         viz2d.plot_images([image0, image1])
         viz2d.plot_keypoints([kpts0, kpts1], colors=[kpc0, kpc1], ps=10)
         # 儲存兩張圖特徵點的圖片
         viz2d.save_plot(video_record_path / f'comparison_featurepoint_{file_name}')
-    send_email()
+        """
 
 if __name__ == "__main__":
     main()
