@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   detect_camera_angle:
     image: detect_camera_angle:v1.0
