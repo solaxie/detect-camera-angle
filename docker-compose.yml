@@ -4,8 +4,7 @@ services:
   detect_camera_angle:
     image: detect_camera_angle:v1.0
     volumes:
-      - /run/user/1000/gvfs/smb-share:server=192.168.104.252,share=omo/CMS_data/record/:/app
-      - /tmp/dect_camera_angle/:/app
+      - /tmp/omo-project/:/app
     # 使用默認的網絡設置
     # 使用默認的重啟策略
     # 使用默認的環境變量
