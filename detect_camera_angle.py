@@ -137,8 +137,8 @@ def main():
     主函數,執行整個程式
     """
     # 設置路徑
-    assets = Path("/app")
-    video_record_path = Path("/app")
+    assets = Path("/app/omo-project")
+    video_record_path = Path("/app/omo-project")
 
     # 獲取今日和昨日的日期路徑
     today_dir, yesterday_dir = get_date_paths(video_record_path)
