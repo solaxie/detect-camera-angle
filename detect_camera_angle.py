@@ -217,7 +217,7 @@ def main():
         viz2d.add_text(0, f'Stop after {matches01["stop"]} layers', fs=20)
         # 儲存兩張圖匹配點的圖片
         compare_today = date.today()
-        viz2d.save_plot(video_record_path / f'comparison_matchpoint_{file_name}_{compare_today}')
+        viz2d.save_plot(video_record_path / f'comparison_matchpoint_{compare_today}_{file_name}')
         # 將匹配點的圖片上傳附件並寄出email
         if vector_exceed_threshold_indices.numel() > 0:
             send_email(subject=f'{subject}:{file_name}', body=(body), attachment=(video_record_path), file_name=f'{file_name}')
