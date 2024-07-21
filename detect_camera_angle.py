@@ -11,9 +11,10 @@ from send_email import send_email
 # 關閉 pytorch gradient calculation 功能
 torch.set_grad_enabled(False)
 
-def setup_logging():
+def setup_logging(video_record_path):
     today = date.today().strftime("%Y%m%d")
-    logging.basicConfig(filename=f'./log-{today}.txt',
+    log_file = os.path.join(video_record_path, f'detect_camera_angle_log-{today}.txt') # 構建日誌文件的完整路徑
+    logging.basicConfig(filename=log_file,
                         level=logging.INFO,
                         format='%(asctime)s - %(levelname)s - %(message)s',
                         datefmt='%Y-%m-%d %H:%M:%S')
@@ -141,7 +142,7 @@ def main():
     video_record_path = Path("/detect_camera_angle_files")
 
     # 設置 logging
-    setup_logging()
+    setup_logging(video_record_path)
 
     # 獲取今日和昨日的日期路徑
     today_dir, yesterday_dir = get_date_paths(video_record_path)
@@ -214,12 +215,12 @@ def main():
             exceed_kpts0 = m_kpts0[vector_exceed_threshold_indices]
             exceed_kpts1 = m_kpts1[vector_exceed_threshold_indices]
             viz2d.plot_matches(exceed_kpts0, exceed_kpts1, color="red", lw=0.2)
-        viz2d.add_text(0, f'Stop after {matches01["stop"]} layers', fs=20)
-        # 儲存兩張圖匹配點的圖片
-        compare_today = date.today()
-        viz2d.save_plot(video_record_path / f'comparison_matchpoint_{compare_today}_{file_name}')
+            viz2d.add_text(0, f'Stop after {matches01["stop"]} layers', fs=20)
+            # 儲存兩張圖匹配點的圖片
+            compare_today = date.today()
+            viz2d.save_plot(video_record_path / f'comparison_matchpoint_{compare_today}_{file_name}')
         # 將匹配點的圖片上傳附件並寄出email
-        if vector_exceed_threshold_indices.numel() > 0:
+        #if vector_exceed_threshold_indices.numel() > 0:
             send_email(subject=f'{subject}:{file_name}', body=(body), attachment=(video_record_path), file_name=f'{file_name}')
 
         """
