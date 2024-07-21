@@ -137,8 +137,11 @@ def main():
     主函數,執行整個程式
     """
     # 設置路徑
-    assets = Path("/dect_camera_angle_files")
-    video_record_path = Path("/dect_camera_angle_files")
+    assets = Path("/detect_camera_angle_files")
+    video_record_path = Path("/detect_camera_angle_files")
+
+    # 設置 logging
+    setup_logging()
 
     # 獲取今日和昨日的日期路徑
     today_dir, yesterday_dir = get_date_paths(video_record_path)
@@ -213,7 +216,8 @@ def main():
             viz2d.plot_matches(exceed_kpts0, exceed_kpts1, color="red", lw=0.2)
         viz2d.add_text(0, f'Stop after {matches01["stop"]} layers', fs=20)
         # 儲存兩張圖匹配點的圖片
-        viz2d.save_plot(video_record_path / f'comparison_matchpoint_{file_name}')
+        compare_today = date.today()
+        viz2d.save_plot(video_record_path / f'comparison_matchpoint_{file_name}_{compare_today}')
         # 將匹配點的圖片上傳附件並寄出email
         if vector_exceed_threshold_indices.numel() > 0:
             send_email(subject=f'{subject}:{file_name}', body=(body), attachment=(video_record_path), file_name=f'{file_name}')
