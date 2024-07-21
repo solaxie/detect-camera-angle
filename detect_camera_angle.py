@@ -51,7 +51,7 @@ def get_date_paths(video_record_path):
     yesterday_dir = video_record_path / yesterday_str
     return today_dir, yesterday_dir
 
-def process_directory(directory):
+def process_directory(directory, video_record_path):
     """
     處理指定目錄中的影片和圖片
     1. 刪除目錄中的所有 .jpg 檔案
@@ -150,7 +150,7 @@ def main():
     # 處理今日的目錄
     if today_dir.exists():
         logging.info(f"\n處理目錄: {today_dir}")
-        process_directory(today_dir)
+        process_directory(today_dir, video_record_path)
     else:
         logging.error(f"錯誤：目錄 {today_dir} 不存在")
 
