@@ -13,7 +13,7 @@ torch.set_grad_enabled(False)
 
 def setup_logging(video_record_path):
     today = date.today().strftime("%Y%m%d")
-    log_file = os.path.join(video_record_path, f'detect_camera_angle_log-{today}.txt') # 構建日誌文件的完整路徑
+    log_file = f"{video_record_path}/run_detect_camera_angle_log-{today}.txt"
     logging.basicConfig(filename=log_file,
                         level=logging.INFO,
                         format='%(asctime)s - %(levelname)s - %(message)s',
