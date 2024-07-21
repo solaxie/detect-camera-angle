@@ -16,7 +16,7 @@ def send_email(sender=None, receivers=None, subject=None, body=None, attachment=
     attachment = attachment or ""
 
     # 設置日誌
-    log_dir = '/log'
+    log_dir = '/mnt/log'
     os.makedirs(log_dir, exist_ok=True)  # 創建目錄，如果目錄已存在則不進行任何操作
     log_file = os.path.join(log_dir, f'email-log-{date.today().strftime("%Y%m%d")}.txt')  # 設置日誌檔名
     logging.basicConfig(filename=log_file, level=logging.ERROR,
