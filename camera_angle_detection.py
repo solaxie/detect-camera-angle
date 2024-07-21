@@ -11,9 +11,9 @@ from send_email import send_email
 # 關閉 pytorch gradient calculation 功能
 torch.set_grad_enabled(False)
 
-def setup_logging(video_record_path):
+def setup_logging(log_path):
     today = date.today().strftime("%Y%m%d")
-    log_file = f"{video_record_path}/run_detect_camera_angle_log-{today}.txt"
+    log_file = f"{log_path}/camera_angle_detection_run_log-{today}.txt"
     logging.basicConfig(filename=log_file,
                         level=logging.INFO,
                         format='%(asctime)s - %(levelname)s - %(message)s',
@@ -37,63 +37,77 @@ def setup_extractor_and_matcher(device):
     matcher = LightGlue(features="superpoint").eval().to(device)
     return extractor, matcher
 
-def get_date_paths(video_record_path):
+def get_date_paths(video_path, frame_path):
     """
     獲取今日和昨日的日期路徑
-    :param video_record_path: 影片記錄的根路徑
-    :return: 今日和昨日的日期路徑
+    :param video_path: 影片記錄的根路徑
+    :param frame_path: 存放 frame 根目錄路徑
+    :return: 今日和昨日的 video 及 frame 目錄路徑
     """
     today = date.today()
     yesterday = today - timedelta(days=1)
     today_str = today.strftime("%Y%m%d")
     yesterday_str = yesterday.strftime("%Y%m%d")
-    today_dir = video_record_path / today_str
-    yesterday_dir = video_record_path / yesterday_str
-    return today_dir, yesterday_dir
+    today_video_dir = video_path / today_str
+    today_frame_dir = frame_path / today_str
+    yesterday_video_dir = video_path / yesterday_str
+    yesterday_frame_dir = frame_path / yesterday_str
+    return today_video_dir, today_frame_dir, yesterday_video_dir, yesterday_frame_dir
 
-def process_directory(directory, video_record_path):
+def process_directory(today_video_dir, today_frame_dir):
     """
     處理指定目錄中的影片和圖片
-    1. 刪除目錄中的所有 .jpg 檔案
-    2. 讀取 .mkv 檔案並保存為 .jpg
-    3. 列出目錄中的所有 .jpg 檔案
-    :param directory: 要處理的目錄路徑
+    1. 讀取 .mkv 檔案並保存第一幀為 .jpg
+    2. 列出目錄中的所有 .jpg 檔案
+    :param today_video_dir: 要處理的影片目錄路徑
+    :param today_frame_dir: 存放影片第一幀 .jpg 的目錄路徑
     """
     try:
-        for mkv_file in directory.glob("*.mkv"):
-            jpg_file = mkv_file.with_suffix('.jpg')
-            video = cv2.VideoCapture(str(mkv_file))
-            if not video.isOpened():
-                logging.error(f"錯誤：無法打開影片 {mkv_file}")
-                continue
-            ret, frame = video.read()
-            if ret:
-                cv2.imwrite(str(jpg_file), frame)
-                logging.info(f"成功：已將 {mkv_file} 的第一幀保存為 {jpg_file}")
-            else:
-                logging.error(f"錯誤：無法讀取 {mkv_file} 的第一幀")
-            video.release()
+        # 建立 today_frame_dir 目錄
+        today_frame_dir.mkdir(parents=True, exist_ok=True)
+        logging.info(f"建立目錄: {today_frame_dir}")
+        # 批次讀取 today_video_dir 全部 .mkv 然後抓取第一幀另存到 today_frame_dir 並存為 .jpg
+        for mkv_file in today_video_dir.glob("*.mkv"):
+            try:
+                jpg_file = today_frame_dir / mkv_file.with_suffix('.jpg').name
+                video = cv2.VideoCapture(str(mkv_file))
+                if not video.isOpened():
+                    logging.error(f"錯誤：無法打開影片 {mkv_file}")
+                    continue
+                ret, frame = video.read()
+                if ret:
+                    cv2.imwrite(str(jpg_file), frame)
+                    logging.info(f"成功：已將 {mkv_file} 的第一幀保存為 {jpg_file}")
+                else:
+                    logging.error(f"錯誤：無法讀取 {mkv_file} 的第一幀")
+                video.release()
+            except Exception as e:
+                logging.error(f"處理影片 {mkv_file} 時發生錯誤: {str(e)}")
 
-        logging.info(f"\n目錄 {directory} 中的 .jpg 檔案：")
-        for jpg_file in directory.glob("*.jpg"):
-            relative_path = jpg_file.relative_to(video_record_path)
-            logging.info(f"檔名: {jpg_file.name}")
-            logging.info(f"路徑: {relative_path}")
-            logging.info("-" * 50)
+        logging.info(f"\n目錄 {today_frame_dir} 中的 .jpg 檔案：")
+        for jpg_file in today_frame_dir.glob("*.jpg"):
+            try:
+                relative_path = jpg_file.relative_to(today_frame_dir)
+                logging.info(f"檔名: {jpg_file.name}")
+                logging.info(f"路徑: {relative_path}")
+                logging.info("-" * 50)
+            except Exception as e:
+                logging.error(f"處理 .jpg 檔案 {jpg_file} 時發生錯誤: {str(e)}")
+
     except Exception as e:
-        logging.error(f"處理目錄 {directory} 時發生錯誤: {str(e)}")
+        logging.error(f"處理目錄 {today_video_dir} 時發生錯誤: {str(e)}")
 
-def read_config(file_path):
+def read_config(config_path):
     """
-    讀取並處理 config.txt 的文字
+    讀取並處理 config 的文字
     忽略'#'開頭的註解
     忽略空白字元/換行字元
     偵測'='為分割字元，左邊為key，右邊為value
-    :param file_path: config.txt 的路徑
+    :param config_path: config 的路徑
     :return: 配置字典
     """
     config = {}
-    with open(file_path, 'r') as file:
+    with open(config_path, 'r') as file:
         for line in file:
             line = line.strip()
             if line and not line.startswith('#'):
@@ -138,29 +152,33 @@ def main():
     主函數,執行整個程式
     """
     # 設置路徑
-    assets = Path("/detect_camera_angle_files")
-    video_record_path = Path("/detect_camera_angle_files")
+    config_path = Path("/mnt/config")
+    video_path = Path("/mnt/video")
+    log_path = Path("/mnt/log")
+    frame_path = Path("/mnt/frame")
+    compare_matchpoint_path = Path("/mnt/compare_matchpoint_path")
 
     # 設置 logging
-    setup_logging(video_record_path)
+    setup_logging(log_path)
 
     # 獲取今日和昨日的日期路徑
-    today_dir, yesterday_dir = get_date_paths(video_record_path)
+    today_video_dir, today_frame_dir, yesterday_video_dir, yesterday_frame_dir = get_date_paths(video_path, frame_path)
 
     # 處理今日的目錄
-    if today_dir.exists():
-        logging.info(f"\n處理目錄: {today_dir}")
-        process_directory(today_dir, video_record_path)
+    if today_video_dir.exists():
+        logging.info(f"\n處理目錄: {today_video_dir}")
+        process_directory(today_video_dir, today_frame_dir)
     else:
-        logging.error(f"錯誤：目錄 {today_dir} 不存在")
+        logging.error(f"錯誤：目錄 {today_video_dir} 不存在")
 
-    # 讀取 config.txt 檔案
-    config = read_config(assets / 'config.txt')
+    # 讀取 config 檔案
+    config = read_config(config_path / 'config.txt')
     threshold_percentage = float(config['threshold_percentage'])
     sender = config['sender']
     receivers = config['receivers'].split(',')
     subject = config['subject']
     body = config['body']
+    attachment= config['attachment']
 
     # 設置PyTorch設備
     device = setup_device()
@@ -168,16 +186,16 @@ def main():
     # 設置特徵提取器和特徵匹配器
     extractor, matcher = setup_extractor_and_matcher(device)
 
-    # 獲取昨天和今天目錄中的所有 .jpg 檔案
-    yesterday_files = list(yesterday_dir.glob("*.jpg"))
-    today_files = list(today_dir.glob("*.jpg"))
+    # 獲取昨天和今天的 frame 目錄中的所有 .jpg 檔案
+    yesterday_files = list(yesterday_frame_dir.glob("*.jpg"))
+    today_files = list(today_frame_dir.glob("*.jpg"))
 
-    # 找出兩個目錄中檔名相同的 .jpg 檔案
+    # 找出兩個 frame 目錄中檔名相同的 .jpg 檔案
     common_files = set(file.name for file in yesterday_files) & set(file.name for file in today_files)
 
     for file_name in common_files:
-        yesterday_file = yesterday_dir / file_name
-        today_file = today_dir / file_name
+        yesterday_file = yesterday_frame_dir / file_name
+        today_file = today_frame_dir / file_name
 
         # 載入圖片
         image0 = load_image(yesterday_file)
@@ -218,10 +236,10 @@ def main():
             viz2d.add_text(0, f'Stop after {matches01["stop"]} layers', fs=20)
             # 儲存兩張圖匹配點的圖片
             compare_today = date.today()
-            viz2d.save_plot(video_record_path / f'comparison_matchpoint_{compare_today}_{file_name}')
+            viz2d.save_plot(compare_matchpoint_path / f'comparison_matchpoint_{compare_today}_{file_name}')
         # 將匹配點的圖片上傳附件並寄出email
         #if vector_exceed_threshold_indices.numel() > 0:
-            send_email(subject=f'{subject}:{file_name}', body=(body), attachment=(video_record_path), file_name=f'{file_name}')
+            send_email(subject=f'{subject}:{file_name}', body=(body), attachment=(compare_matchpoint_path), file_name=f'{file_name}')
 
         """
         # 繪製兩張圖的特徵點
@@ -229,7 +247,7 @@ def main():
         viz2d.plot_images([image0, image1])
         viz2d.plot_keypoints([kpts0, kpts1], colors=[kpc0, kpc1], ps=10)
         # 儲存兩張圖特徵點的圖片
-        viz2d.save_plot(video_record_path / f'comparison_featurepoint_{file_name}')
+        viz2d.save_plot(video_path / f'comparison_featurepoint_{file_name}')
         """
 
 if __name__ == "__main__":

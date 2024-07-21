@@ -1,10 +1,14 @@
 services:
-  detect_camera_angle:
-    image: detect_camera_angle:v1.0
+  camera_angle_detection:
+    image: solaxie/camera_angle_detection:v1.0
     volumes:
-      - /tmp/omo-project/:/app
-      - /run/user/1000/gvfs/smb-share:server=192.168.104.252,share=omo/CMS_data/record/:/app
-    command: python detect_camera_angle.py
+        - type: bind  # 掛載NAS的監視器影片
+          source: /run/user/1000/gvfs/smb-share:server=192.168.104.252,share=omo/CMS_data/record
+          target: /mnt/video
+        - /home/omo/workspace/projects/omo/camera_angle_detection:/mnt/config  # 掛載讀取 config 檔案
+        - /tmp/camera_angle_detection/log:/mnt/log  # 掛載存放執行 camera_angle_detection 的 log
+        - /tmp/camera_angle_detection/frame:/mnt/frame  # 掛載存放監視器影片 frame.jpg
+        - /tmp/camera_angle_detection/compare_matchpoint:/mnt/compare_matchpoint  # 掛載存放有繪製匹配點的 .jpg
     # 使用默認的網絡設置
     # 使用默認的重啟策略
     # 使用默認的環境變量
