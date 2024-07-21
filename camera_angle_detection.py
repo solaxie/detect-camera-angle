@@ -156,7 +156,7 @@ def main():
     video_path = Path("/mnt/video")
     log_path = Path("/mnt/log")
     frame_path = Path("/mnt/frame")
-    compare_matchpoint_path = Path("/mnt/compare_matchpoint_path")
+    compare_matchpoint_path = Path("/mnt/compare_matchpoint")
 
     # 設置 logging
     setup_logging(log_path)
