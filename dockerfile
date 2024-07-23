@@ -7,7 +7,7 @@ WORKDIR /app/
 # 安裝 git 並克隆項目
 RUN apt-get update && \
     apt-get install -y git libgl1-mesa-glx libglib2.0-0 wget && \
-    git clone --recurse-submodules https://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@github.com/solaxie/omo-project.git . && \
+    git clone --recurse-submodules --depth 1 https://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@github.com/solaxie/omo-project.git . && \
     pip install --no-cache-dir -e ./LightGlue && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /root/.cache /app/omo-project.git && \

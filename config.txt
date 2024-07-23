@@ -1,5 +1,6 @@
 # 畫面像素的位移閥值百分比
 threshold_percentage=0.05
+
 # send_email函數的參數: 寄信人，若不傳入參數，會套用預設omo@eslite.com
 sender=
 # send_email函數的參數: 收件人，若不傳入參數，會套用預設solaxie@eslite.com, hectormao@eslite.com

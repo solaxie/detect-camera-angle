@@ -262,22 +262,22 @@ def main():
         """
         # 檢測是否有移動或變形
         if vector_exceed_threshold_indices.numel() > 0:
-            print(f"Alert: 今日監視器畫面{file_name} 有明顯的移動或變形! 閥值: {threshold_percentage * 100:.0f}%")
+            print(f"Alert: 今日監視器畫面{file_name} 有明顯的移動或變形! 閥值: {threshold_percentage * 100:.1f}%")
             vector_exceed_threshold_displacements = displacements[vector_exceed_threshold_indices]
-            print(f"監視器畫面 {file_name} 矢量位移超過閾值 {threshold_percentage * 100:.0f}% 的 displacements 有:")
+            print(f"監視器畫面 {file_name} 矢量位移超過閾值 {threshold_percentage * 100:.1f}% 的 displacements 有:")
             print(vector_exceed_threshold_displacements)
         else:
-            print(f"Info: {file_name} 無明顯的移動或變形. 閥值: {threshold_percentage * 100:.0f}%")
+            print(f"Info: {file_name} 無明顯的移動或變形. 閥值: {threshold_percentage * 100:.1f}%")
         """
 
         # 檢測是否有移動或變形
         if vector_exceed_threshold_indices.numel() > 0:
-            logging.warning(f"Alert: 今日監視器畫面{file_name} 有明顯的移動或變形! 閥值: {threshold_percentage * 100:.0f}%")
+            logging.warning(f"Alert: 今日監視器畫面{file_name} 有明顯的移動或變形! 閥值: {threshold_percentage * 100:.1f}%")
             vector_exceed_threshold_displacements = displacements[vector_exceed_threshold_indices]
-            logging.info(f"監視器畫面 {file_name} 矢量位移超過閾值 {threshold_percentage * 100:.0f}% 的 displacements 有:")
+            logging.info(f"監視器畫面 {file_name} 矢量位移超過閾值 {threshold_percentage * 100:.1f}% 的 displacements 有:")
             logging.info(f"{vector_exceed_threshold_displacements}")
         else:
-            logging.info(f"Info: {file_name} 無明顯的移動或變形. 閥值: {threshold_percentage * 100:.0f}%")
+            logging.info(f"Info: {file_name} 無明顯的移動或變形. 閥值: {threshold_percentage * 100:.1f}%")
 
         # 繪製兩張圖匹配點,如果位移沒超出閾值則為綠色,超出閾值則為紅色
         axes = viz2d.plot_images([image0, image1])
